@@ -1,6 +1,9 @@
 package com.example.emos.wx.exception;
 
 import lombok.Data;
+
+
+// 精簡異常
 @Data  // 自動生成getter setter
 public class EmosException extends RuntimeException{ // runtimeexception可以自動處理
     private String msg;

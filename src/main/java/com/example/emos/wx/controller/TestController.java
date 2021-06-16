@@ -18,7 +18,7 @@ public class TestController {
     @PostMapping("/sayHello")
     @ApiOperation("最簡單的測試方法")  // 方便swagger網頁上顯示
     public R sayHello(@Valid @RequestBody TestSayHelloForm form) { // 如果這裡通過，下面就可以執行
-        return R.ok().put("message", "Hello, " + form.getName());
+        return R.ok().put("message", "Hello, " + form.getName()); // R對象寫到響應體裡
     }
 }
 

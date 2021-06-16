@@ -84,7 +84,7 @@ public class OAuth2Filter extends AuthenticatingFilter {
 
         resp.setHeader("Content-Type", "text/html;charset=UTF-8");
 
-        // 允許跨域請求 //
+        // 允許跨域請求(因為前後端分離) //
         resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
         // 當server收到跨跨域請求時，會依據http header附的origin值決定是否要同意，只要在response加上ACAO就可以授權同意請求了
         resp.setHeader("Access-Control-Allow-Credentails", "true"); // 允許跨域請求攜帶cookies傳進來
