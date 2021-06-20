@@ -1,19 +1,17 @@
 package com.example.emos.wx.db.dao;
 
-import com.example.emos.wx.db.pojo.TbUser;
 import org.apache.ibatis.annotations.Mapper;
+
+import java.util.HashMap;
+import java.util.Set;
 
 @Mapper
 public interface TbUserDao {
-    int deleteByPrimaryKey(Integer id);
+    public boolean haveRootUser();
 
-    int insert(TbUser record);
+    public int insert(HashMap param); // 返回int得知有沒有插入成功
 
-    int insertSelective(TbUser record);
+    public Integer searchIdByOpenId(String openId);
 
-    TbUser selectByPrimaryKey(Integer id);
-
-    int updateByPrimaryKeySelective(TbUser record);
-
-    int updateByPrimaryKey(TbUser record);
+    public Set<String> searchUserPermissions(int userId);
 }
