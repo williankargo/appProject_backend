@@ -36,7 +36,7 @@ public class ShiroConfig {
 
         Map<String, Filter> map = new HashMap<>(); // 要創建map才能放filter
         map.put("oauth2",filter); // key隨便取
-        shiroFilter.setFilters(map);
+        shiroFilter.setFilters(map); // filter註冊給srpingMVC
 
         // 設定要攔截的項目
         Map<String, String> filterMap = new LinkedHashMap<>();

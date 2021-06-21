@@ -2,6 +2,7 @@ package com.example.emos.wx.controller;
 
 import com.example.emos.wx.common.util.R;
 import com.example.emos.wx.config.shiro.JwtUtil;
+import com.example.emos.wx.controller.form.LoginForm;
 import com.example.emos.wx.controller.form.RegisterForm;
 import com.example.emos.wx.service.UserService;
 import io.swagger.annotations.Api;
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/user")
-@Api("用戶模塊Web接口")
+@Api(tags = "用戶模塊Web接口")
 public class UserController {
 
     @Autowired
@@ -42,8 +43,17 @@ public class UserController {
         String token = jwtUtil.createToken(id);
         Set<String> paramSet = userService.searchUserPermissions(id);
         saveCacheToken(token, id); // 往redis存入token緩存
+        return R.ok("用戶註冊成功").put("token", token).put("permission", paramSet); // 會推到客戶端
+    }
 
-        return R.ok("用戶註冊成功").put("token", token).put("permission", paramSet);
+    @PostMapping("/login")
+    @ApiOperation("登入系統")
+    public R login(@Valid @RequestBody LoginForm form){
+        int id = userService.login(form.getCode());
+        String token = jwtUtil.createToken(id);
+        saveCacheToken(token, id);
+        Set<String> permsSet = userService.searchUserPermissions(id);
+        return R.ok("登入成功").put("token", token).put("permission", permsSet);
     }
 
 

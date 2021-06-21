@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+// springMVC的filter
 // 客戶端每次的請求都會被filter攔截，後端發出的響應也會被filter攔截
 // todo: 如果是單例的，那多個thread使用OAuth2Filter時，用的ThreadLocalToken就是同一個對象，會有thread安全問題。
 @Component // 現在只是普通的bean，需經過shiroConfig註冊給shiro框架才能發揮filter的功能
@@ -87,13 +88,13 @@ public class OAuth2Filter extends AuthenticatingFilter {
         // 允許跨域請求(因為前後端分離) //
         resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
         // 當server收到跨跨域請求時，會依據http header附的origin值決定是否要同意，只要在response加上ACAO就可以授權同意請求了
-        resp.setHeader("Access-Control-Allow-Credentails", "true"); // 允許跨域請求攜帶cookies傳進來
+        resp.setHeader("Access-Control-Allow-Credentials", "true"); // 允許跨域請求攜帶cookies傳進來
 
         threadLocalToken.clear(); // 把上個請求的token緩存刪掉
         String token = getRequestToken((HttpServletRequest) request);
         if(StringUtils.isBlank(token)){
             resp.setStatus(HttpStatus.HTTP_UNAUTHORIZED);
-            resp.getWriter().print("無效的token");
+            resp.getWriter().print("無效的token#1");
             return false;
         }
 
@@ -121,7 +122,7 @@ public class OAuth2Filter extends AuthenticatingFilter {
 
         }catch(JWTDecodeException e){
             resp.setStatus(HttpStatus.HTTP_UNAUTHORIZED);
-            resp.getWriter().print("無效的token");
+            resp.getWriter().print("無效的token#2");
             return false;
         }
 
@@ -156,7 +157,7 @@ public class OAuth2Filter extends AuthenticatingFilter {
         String token = request.getHeader("token");
 
         // 如果header中不存在token，則從參數中獲取token
-        if (StrUtil.isBlank(token)) {
+        if (StringUtils.isBlank(token)) {
             token = request.getParameter("token");
         }
         return token;

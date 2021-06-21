@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 // 全局捕獲的異常攔截器
 @Slf4j // 日誌模塊
 @RestControllerAdvice // 捕獲springMVC所有異常(因為是用Restful概念開發所以前面加上Rest)
-public class ExceptionAdice {
+public class ExceptionAdvice {
 
     @ResponseBody // 要寫到響應裡面的
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // 設定狀態碼500

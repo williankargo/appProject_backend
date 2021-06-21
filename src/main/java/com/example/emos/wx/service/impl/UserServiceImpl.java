@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
     private TbUserDao userDao;
 
     // 去微信取得openId(用戶唯一標示)
-    private String getOpenId(String code){ // code: 臨時授權字符串
+    private String getOpenId(String code) { // code: 臨時授權字符串
         String url = "https://api.weixin.qq.com/sns/jscode2session";
         HashMap map = new HashMap();
         map.put("appid", appId);
@@ -46,7 +46,7 @@ public class UserServiceImpl implements UserService {
         JSONObject json = JSONUtil.parseObj(response);
 
         String openId = json.getStr("openid");
-        if(openId == null || openId.length() == 0){
+        if (openId == null || openId.length() == 0) {
             throw new RuntimeException("臨時登入憑證錯誤"); // RunTimeException() 用在微信平台出現問題
         }
         return openId;
@@ -56,10 +56,10 @@ public class UserServiceImpl implements UserService {
     public int registerUser(String registerCode, String code, String nickname, String photo) {
 
         // 如果邀請碼是00000，代表是超級管理員
-        if(registerCode.equals("000000")){
+        if (registerCode.equals("000000")) {
             // 查詢超級管理員帳戶是否已經綁定
             boolean bool = userDao.haveRootUser();
-            if(!bool){
+            if (!bool) {
                 // 把當前用戶綁定到ROOT帳戶
                 String openId = getOpenId(code);
                 HashMap param = new HashMap();
@@ -75,14 +75,12 @@ public class UserServiceImpl implements UserService {
                 userDao.insert(param);
                 int id = userDao.searchIdByOpenId(openId);
                 return id;
-            }else{
+            } else {
                 // 如果root已經綁定了，就拋出異常
                 throw new EmosException("無法綁定超級管理員帳號"); // 如果是Service層出現異常，返回EmosException
             }
-        }
-
-        else{
-
+        } else {
+// todo
         }
 
         return 0;
@@ -92,5 +90,16 @@ public class UserServiceImpl implements UserService {
     public Set<String> searchUserPermissions(int userId) {
         Set<String> permissions = userDao.searchUserPermissions(userId);
         return permissions;
+    }
+
+    @Override
+    public Integer login(String code) {
+        String openId = getOpenId(code);
+        Integer id = userDao.searchIdByOpenId(openId);
+        if (id == null) {
+            throw new EmosException("帳戶不存在");
+        }
+        // todo: 從消息隊列中接收消息，轉移到消息表
+        return id;
     }
 }
