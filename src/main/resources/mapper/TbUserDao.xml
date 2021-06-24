@@ -19,8 +19,15 @@
     WHERE u.id = #{userId} AND u.status = 1;
   </select>
 
+  <select id="searchById" parameterType="int" resultType="com.example.emos.wx.db.pojo.TbUser">
+    SELECT
+      id, open_id, nickname, photo, name, sex, tel, role, root, dept_id, status, create_time
+    FROM tb_user WHERE id=#{userId} AND status = 1
+  </select>
 
-<!--  比如說一個管理者創建一個普通員工的紀錄，這名普通員工是可以拿激活碼到emos上面，把自己的微信帳戶和員工紀錄進行綁定，-->
+
+
+  <!--  比如說一個管理者創建一個普通員工的紀錄，這名普通員工是可以拿激活碼到emos上面，把自己的微信帳戶和員工紀錄進行綁定，-->
 <!--  那麼現有emos裡面他的openId就是空的-->
 <!--  openId是傳入的值-->
   <insert id="insert" parameterType="HashMap">

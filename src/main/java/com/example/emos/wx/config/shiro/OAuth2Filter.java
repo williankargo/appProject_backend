@@ -120,7 +120,7 @@ public class OAuth2Filter extends AuthenticatingFilter {
                 return false;
             }
 
-        }catch(JWTDecodeException e){
+        }catch(Exception e){
             resp.setStatus(HttpStatus.HTTP_UNAUTHORIZED);
             resp.getWriter().print("無效的token#2");
             return false;

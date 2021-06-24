@@ -2,6 +2,8 @@ package com.example.emos.wx.service;
 
 // 因為service很容易變動，所以用實現接口子類的方式來實現服務
 
+import com.example.emos.wx.db.pojo.TbUser;
+
 import java.util.Set;
 
 public interface UserService {
@@ -11,4 +13,6 @@ public interface UserService {
     public Set<String> searchUserPermissions(int userId);
 
     public Integer login(String code);
+
+    public TbUser searchById(int userId);
 }

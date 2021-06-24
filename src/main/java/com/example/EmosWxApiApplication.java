@@ -42,6 +42,7 @@ public class EmosWxApiApplication {
                 // 可以用constants.setXXX() 但是不知道要調哪個set，所以用反射大法
                 Field field = constants.getClass().getDeclaredField(key); // 反射大法，直接把值灌入這個constants實例
                 field.set(constants, value);
+                // System.out.println("fieldValue: " + value);
             } catch (Exception e) { // 反射時要處理異常
                 log.error("執行異常", e);
             }

@@ -46,12 +46,13 @@ public class SwaggerConfig {
 
         /*
          * 下面的语句是开启对JWT的支持，当用户用Swagger调用受JWT认证保护的方法，
-         * 必须要先提交参数（例如令牌）
+         * 必须要先提交参数（例如令牌）(左上角會出現token介面)
          */
         //存储用户必须提交的参数
         List<ApiKey> apikey = new ArrayList();
         //规定用户需要输入什么参数
-        apikey.add(new ApiKey("token", "token", "header")); // 請求頭header中的令牌name裡的描述keyname
+        apikey.add(new ApiKey("token", "token", "header"));
+        // (文本塊的名字,往請求頭裡面寫數據時參數名字叫什麼,然後是要把數據寫到請求頭裡面去)
         docket.securitySchemes(apikey);
 
         //如果用户JWT认证通过，则在Swagger中全局有效
