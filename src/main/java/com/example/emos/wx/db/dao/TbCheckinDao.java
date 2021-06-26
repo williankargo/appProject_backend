@@ -1,5 +1,6 @@
 package com.example.emos.wx.db.dao;
 
+import com.example.emos.wx.db.pojo.TbCheckin;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.HashMap;
@@ -9,4 +10,6 @@ import java.util.HashMap;
 public interface TbCheckinDao {
 
     public Integer haveCheckin(HashMap param);
+
+    public void insert(TbCheckin checkin);
 }

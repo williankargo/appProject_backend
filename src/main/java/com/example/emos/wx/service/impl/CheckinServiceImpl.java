@@ -2,18 +2,26 @@ package com.example.emos.wx.service.impl;
 
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
+import cn.hutool.http.HttpUtil;
 import com.example.emos.wx.config.SystemConstants;
 import com.example.emos.wx.db.dao.TbCheckinDao;
+import com.example.emos.wx.db.dao.TbFaceModelDao;
 import com.example.emos.wx.db.dao.TbHolidaysDao;
 import com.example.emos.wx.db.dao.TbWorkdayDao;
 import com.example.emos.wx.db.pojo.TbHolidays;
 import com.example.emos.wx.db.pojo.TbWorkday;
+import com.example.emos.wx.exception.EmosException;
 import com.example.emos.wx.service.CheckinService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.HashMap;
 
 
@@ -33,6 +41,15 @@ public class CheckinServiceImpl implements CheckinService {
 
     @Autowired
     private TbCheckinDao checkinDao;
+
+    @Autowired
+    private TbFaceModelDao faceModelDao;
+
+    @Value("${emos.face.createFaceModelUrl}")
+    private String createFaceModelUrl;
+
+    @Value("${emos.face.checkinUrl}")
+    private String checkinUrl;
 
     @Override
     public String validCanCheckIn(int userId, String date) {
@@ -71,5 +88,46 @@ public class CheckinServiceImpl implements CheckinService {
                 return bool ? "今日已經打卡，不用重複打卡" : "可以打卡";
             }
         }
+    }
+
+    @Override
+    public void checkin(HashMap param) { // todo: param具體是什麼我還要確認
+
+        Date d1 = DateUtil.date(); // 當前時間
+        Date d2 = DateUtil.parse(DateUtil.today() + " " + constants.attendanceTime); // 上班時間 todo: constants
+        Date d3 = DateUtil.parse(DateUtil.today() + " " + constants.attendanceEndTime); // 簽到結束時間
+
+        int status = 1;
+        if (d1.compareTo(d2) <= 0) {
+            status = 1; // 正常簽到時間
+        } else if (d1.compareTo(d2) > 0 && d1.compareTo(d3) < 0) {
+            status = 2; // 遲到
+        }
+
+        int userId = (Integer) param.get("userId");
+        String faceModel = faceModelDao.searchFaceModel(userId);
+        if (faceModel == null) {
+            throw new EmosException("不存在人臉模型");
+        } else {
+            String path = (String) param.get("path");
+            HttpRequest request = HttpUtil.createPost(checkinUrl);
+            // 上傳圖片文件，後面是python提交參數的名字和數據庫中存有的faceModel
+            request.form("photo", FileUtil.file(path), "targetModel", faceModel);
+            HttpResponse response = request.execute();
+            if (response.getStatus() != 200) {
+                log.error("人臉識別服務異常"); // 輸出Slf4j日誌
+                throw new EmosException("人臉識別服務異常");
+            }
+            String body = response.body();
+            if ("无法识别出人脸".equals(body) || "照片中存在多张人脸".equals(body)) {
+                throw new EmosException(body);
+            } else if ("False".equals(body)) {
+                throw new EmosException("簽到無效，非本人簽到");
+            } else if ("True".equals(body)) {
+                // TODO 查詢疫情風險等級
+                // TODO 保存簽到紀錄
+            }
+        }
+
     }
 }
