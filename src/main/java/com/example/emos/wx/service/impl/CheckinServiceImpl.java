@@ -9,11 +9,13 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import com.example.emos.wx.config.SystemConstants;
 import com.example.emos.wx.db.dao.*;
+import com.example.emos.wx.db.pojo.TbCheckin;
 import com.example.emos.wx.db.pojo.TbCity;
 import com.example.emos.wx.db.pojo.TbHolidays;
 import com.example.emos.wx.db.pojo.TbWorkday;
 import com.example.emos.wx.exception.EmosException;
 import com.example.emos.wx.service.CheckinService;
+import com.example.emos.wx.service.SmallTools.ChineseConverter;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -34,11 +36,11 @@ import java.util.HashMap;
 @Slf4j
 public class CheckinServiceImpl implements CheckinService {
 
-    @Autowired
+    @Autowired  // 將Spring託管的bean注入我們的應用程序
     private SystemConstants constants;
 
     @Autowired
-    private TbHolidaysDao holidaysDao;
+    private TbHolidaysDao holidaysDao; // dao
 
     @Autowired
     private TbWorkdayDao workdayDao;
@@ -132,33 +134,88 @@ public class CheckinServiceImpl implements CheckinService {
                 throw new EmosException("簽到無效，非本人簽到");
             } else if ("True".equals(body)) {
 
+                /**
+                 * 查詢疫情風險等級
+                 * */
                 int risk = 1;
                 String city = (String) param.get("city");
                 String district = (String) param.get("district");
+                String country = (String) param.get("country"); // todo: 看到底會不會拿nation(會寫成country要改成nation)
+                String province = (String) param.get("province");
 
-                // 查詢疫情風險等級，TW不適用
-                if (!StrUtil.isBlank(city) && !StrUtil.isBlank(district)) {
-                    String code = cityDao.searchCode(city);
+                if ("中国".equals(country) && !StrUtil.isBlank(city) && !StrUtil.isBlank(district)) { // 只有中國和中國台灣能查到資料
                     try {
-                        String url = "http://m." + code + ".bendibao.com/news/yqdengji/?qu=" + district;
-                        Document document = Jsoup.connect(url).get();
-                        Elements elements = document.getElementsByClass("list-content");
-                        if (elements.size() > 0) {
-                            Element element = elements.get(0); // 取得第一個
-                            String result = element.select("p:last-child").text();
-                            if ("高风险".equals(result)) {
+                        // 台灣的方法
+                        if ("台湾省".equals(province)) {
+                            // 全部縣市
+                            String url2 = "https://covid-19.nchc.org.tw/city_confirmed.php?mycity=全部縣市";
+                            Document document2 = Jsoup.connect(url2).get();
+                            Elements elements2 = document2.getElementsByClass("country_deaths mb-1 text-dark display-4");
+
+                            Element element2 = elements2.get(0);
+                            String result2 = element2.select("h1").text(); //todo: +有影響嗎?
+                            int sum = Integer.parseInt(result2);
+
+                            // 單一縣市
+                            city = ChineseConverter.CHconverter(city);
+                            String url = "https://covid-19.nchc.org.tw/city_confirmed.php?mycity=" + city; // 精度只能到city
+                            Document document = Jsoup.connect(url).get();
+                            Elements elements = document.getElementsByClass("country_deaths mb-1 text-dark display-4");
+
+                            Element element = elements.get(0);
+                            String result = element.select("h1").text(); //todo: +有影響嗎?
+                            int num = Integer.parseInt(result);
+
+                            if (num / sum > 1 / 3) { // 高風險
                                 risk = 3;
-                                // todo:發送警告郵件
-                            } else if ("低风险".equals(result)) {
+                                // todo: 發送警告郵件
+                            } else if (num / sum < 1 / 3) { // 低風險
                                 risk = 2;
+                            }
+                            // 中國的方法
+                        } else {
+
+                            String code = cityDao.searchCode(city);
+
+                            String url = "http://m." + code + ".bendibao.com/news/yqdengji/?qu=" + district;
+                            Document document = Jsoup.connect(url).get();
+                            Elements elements = document.getElementsByClass("list-content");
+                            if (elements.size() > 0) {
+                                Element element = elements.get(0); // 取得第一個出現的list-content
+                                String result = element.select("p:last-child").text(); // 取得最後一個p
+                                if ("高风险".equals(result)) {
+                                    risk = 3;
+                                    // todo:發送警告郵件
+                                } else if ("中风险".equals(result)) {
+                                    risk = 2;
+                                }
                             }
                         }
                     } catch (Exception e) {
                         log.error("執行異常", e);
+                        throw new EmosException("獲取風險等級失敗");
                     }
                 }
+
+                /**
+                 * 保存簽到紀錄
+                 * */
+                String address = (String) param.get("address");
+
+                TbCheckin entity = new TbCheckin(); // PO對象，為什麼不用Autowired?
+                entity.setUserId(userId);
+                entity.setAddress(address);
+                entity.setCountry(country);
+                entity.setProvince(province);
+                entity.setCity(city);
+                entity.setDistrict(district);
+                entity.setStatus((byte) status);
+                entity.setDate(DateUtil.today()); // DateUtil.today()返回String日期
+                entity.setCreateTime(d1);
+                checkinDao.insert(entity);
+
             }
         }
-
     }
 }
+

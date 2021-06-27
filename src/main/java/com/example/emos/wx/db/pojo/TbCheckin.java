@@ -8,6 +8,8 @@ import lombok.Data;
  * tb_checkin
  * @author 
  */
+
+// PO
 @Data
 public class TbCheckin implements Serializable {
     /**
@@ -58,7 +60,10 @@ public class TbCheckin implements Serializable {
     /**
      * 签到日期
      */
-    private Date date;
+    private String date;
+
+    // 數據表中的date是DateTime類型，java裡沒有DateTime類型，
+    // 於是ORM映射就抓java裡的Date來接，但是不想保留時分秒的資訊，於是用String來接，只保留日期數據
 
     /**
      * 签到时间
@@ -67,3 +72,5 @@ public class TbCheckin implements Serializable {
 
     private static final long serialVersionUID = 1L;
 }
+
+// @Componenet, @AutoWired等要不要使用？
