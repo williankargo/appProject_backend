@@ -4,7 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 
 
 @Mapper
-public interface TbCityDao {
+public interface TbHolidaysDao {
 
-    public String searchCode(String city);
+   public Integer searchTodayIsHolidays();
 }

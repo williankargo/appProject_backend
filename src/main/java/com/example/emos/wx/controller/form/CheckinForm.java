@@ -8,7 +8,7 @@ import lombok.Data;
 @ApiModel
 public class CheckinForm {
     private String address;
-    private String country;
+    private String nation; // nation or country?
     private String province;
     private String city;
     private String district;
