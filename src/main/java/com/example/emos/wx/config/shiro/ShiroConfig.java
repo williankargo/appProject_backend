@@ -27,7 +27,8 @@ public class ShiroConfig {
         return securityManager;
     }
 
-
+    // @Bean寫在方法上，默認是方法的駝峰字名稱，若方法有參數，spring會去容器找有沒有匹配的bean對象，像@AutoWired在做的事
+    // 表明會把當前方法的返回值作為bean對象存入spring容器中
     // 封裝filter
     @Bean("shiroFilter")
     public ShiroFilterFactoryBean shiroFilter(SecurityManager securityManager, OAuth2Filter filter){

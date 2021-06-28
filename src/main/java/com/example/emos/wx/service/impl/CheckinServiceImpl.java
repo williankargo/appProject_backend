@@ -9,13 +9,11 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import com.example.emos.wx.config.SystemConstants;
 import com.example.emos.wx.db.dao.*;
-import com.example.emos.wx.db.pojo.TbCheckin;
-import com.example.emos.wx.db.pojo.TbCity;
-import com.example.emos.wx.db.pojo.TbHolidays;
-import com.example.emos.wx.db.pojo.TbWorkday;
+import com.example.emos.wx.db.pojo.*;
 import com.example.emos.wx.exception.EmosException;
 import com.example.emos.wx.service.CheckinService;
 import com.example.emos.wx.service.SmallTools.ChineseConverter;
+import com.example.emos.wx.task.EmailTask;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -24,6 +22,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -32,11 +31,14 @@ import java.util.HashMap;
 
 
 @Service
-@Scope("prototype") // todo: 為了之後的郵件異步傳輸
+@Scope("prototype") // 為了之後的郵件異步傳輸
 @Slf4j
 public class CheckinServiceImpl implements CheckinService {
 
-    @Autowired  // 將Spring託管的bean注入我們的應用程序
+    // 將Spring託管的bean注入我們的應用程序。創建的時候需要對變量做初始化和注入依賴的java類，才需要加上@Autowired。
+    // 透過這樣的機制，不需要再去new一個DAO
+    // 元件在後端運行時只會存在一個，任何地方所使用的某個元件都是指向同一個。我有一條狗妹妹有一條狗，我們的狗是同一條狗，都存在這棟房子中。
+    @Autowired
     private SystemConstants constants;
 
     @Autowired
@@ -54,11 +56,24 @@ public class CheckinServiceImpl implements CheckinService {
     @Autowired
     private TbCityDao cityDao;
 
+    @Autowired
+    private TbUserDao userDao;
+
     @Value("${emos.face.createFaceModelUrl}")
     private String createFaceModelUrl;
 
     @Value("${emos.face.checkinUrl}")
     private String checkinUrl;
+
+    @Value("${emos.email.hr}")
+    private String hrEmail;
+
+    @Autowired
+    private EmailTask emailTask;
+
+    @Value("${emos.code}")
+    private String code;
+
 
     @Override
     public String validCanCheckIn(int userId, String date) {
@@ -100,7 +115,11 @@ public class CheckinServiceImpl implements CheckinService {
     }
 
     @Override
-    public void checkin(HashMap param) { // todo: param具體是什麼我還要確認
+    public void checkin(HashMap param) {
+
+        // VO/BO不能互傳通用
+        // VO: 可能有很多驗證的註解，只有controller能用
+        // BO: Service在用的，這裡在controller就把PO轉成BO對象HashMap了
 
         Date d1 = DateUtil.date(); // 當前時間
         Date d2 = DateUtil.parse(DateUtil.today() + " " + constants.attendanceTime); // 上班時間
@@ -122,6 +141,7 @@ public class CheckinServiceImpl implements CheckinService {
             HttpRequest request = HttpUtil.createPost(checkinUrl);
             // 上傳圖片文件，後面是python提交參數的名字和數據庫中存有的faceModel
             request.form("photo", FileUtil.file(path), "targetModel", faceModel);
+            request.form("code", code); // 資源提取碼
             HttpResponse response = request.execute();
             if (response.getStatus() != 200) {
                 log.error("人臉識別服務異常"); // 輸出Slf4j日誌
@@ -142,6 +162,7 @@ public class CheckinServiceImpl implements CheckinService {
                 String district = (String) param.get("district");
                 String country = (String) param.get("country"); // todo: 看到底會不會拿nation(會寫成country要改成nation)
                 String province = (String) param.get("province");
+                String address = (String) param.get("address");
 
                 if ("中国".equals(country) && !StrUtil.isBlank(city) && !StrUtil.isBlank(district)) { // 只有中國和中國台灣能查到資料
                     try {
@@ -168,7 +189,19 @@ public class CheckinServiceImpl implements CheckinService {
 
                             if (num / sum > 1 / 3) { // 高風險
                                 risk = 3;
-                                // todo: 發送警告郵件
+                                // 發送警告郵件
+                                HashMap<String, String> map = userDao.searchNameAndDept(userId);
+                                String name = map.get("name");
+                                String deptName = map.get("dept_name");
+                                deptName = deptName != null ? deptName : "";
+                                SimpleMailMessage message = new SimpleMailMessage();
+                                message.setTo(hrEmail);
+                                message.setSubject("員工" + name + "身處高風險疫情第區警告");
+                                message.setText(deptName + "員工" + name + "，" + DateUtil.format(new Date(),
+                                        "yyyy年MM月dd日") + "處於" + address + "，屬於新冠疫情高風險地區，" +
+                                        "請即時與該員工聯繫，確認身體狀況！");
+                                emailTask.sendAsync(message);
+
                             } else if (num / sum < 1 / 3) { // 低風險
                                 risk = 2;
                             }
@@ -185,7 +218,19 @@ public class CheckinServiceImpl implements CheckinService {
                                 String result = element.select("p:last-child").text(); // 取得最後一個p
                                 if ("高风险".equals(result)) {
                                     risk = 3;
-                                    // todo:發送警告郵件
+                                    // 發送警告郵件
+                                    HashMap<String, String> map = userDao.searchNameAndDept(userId);
+                                    String name = map.get("name");
+                                    String deptName = map.get("dept_name");
+                                    deptName = deptName != null ? deptName : "";
+                                    SimpleMailMessage message = new SimpleMailMessage();
+                                    message.setTo(hrEmail);
+                                    message.setSubject("員工" + name + "身處高風險疫情第區警告");
+                                    message.setText(deptName + "員工" + name + "，" + DateUtil.format(new Date(),
+                                            "yyyy年MM月dd日") + "處於" + address + "，屬於新冠疫情高風險地區，" +
+                                            "請即時與該員工聯繫，確認身體狀況！");
+                                    emailTask.sendAsync(message);
+
                                 } else if ("中风险".equals(result)) {
                                     risk = 2;
                                 }
@@ -200,9 +245,8 @@ public class CheckinServiceImpl implements CheckinService {
                 /**
                  * 保存簽到紀錄
                  * */
-                String address = (String) param.get("address");
-
-                TbCheckin entity = new TbCheckin(); // PO對象，為什麼不用Autowired?
+                // PO對象，為什麼不用Autowired? 簡單的POJO對象的賦值是由數據庫做的，不需要Spring框架託管
+                TbCheckin entity = new TbCheckin();
                 entity.setUserId(userId);
                 entity.setAddress(address);
                 entity.setCountry(country);
@@ -215,6 +259,24 @@ public class CheckinServiceImpl implements CheckinService {
                 checkinDao.insert(entity);
 
             }
+        }
+    }
+
+    @Override
+    public void createFaceModel(int userId, String path) {
+
+        HttpRequest request = HttpUtil.createPost(createFaceModelUrl);
+        request.form("photo", FileUtil.file(path));
+        request.form("code", code); // 資源提取碼
+        HttpResponse response = request.execute();
+        String body = response.body();
+        if ("无法辨识出人脸".equals(body) || "照片中存在多张人脸".equals(body)) {
+            throw new EmosException(body);
+        } else {
+            TbFaceModel entity = new TbFaceModel();
+            entity.setUserId(userId);
+            entity.setFaceModel(body);
+            faceModelDao.insert(entity);
         }
     }
 }
