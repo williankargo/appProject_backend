@@ -70,14 +70,14 @@ public class CheckinController {
                 param.put("address", form.getAddress());
                 param.put("country", form.getCountry());
                 param.put("province", form.getProvince());
-                checkinService.checkin(param);
+                checkinService.checkin(param); // 這裡會調出path裡的東西進行驗證
                 return R.ok("簽到成功");
 
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
                 throw new EmosException("圖片保存錯誤");
             } finally {
-                FileUtil.del(path);  // 簽到成功後就刪掉圖片 todo: 幹阿沒有驗證啊？
+                FileUtil.del(path);  // 簽到成功後就刪掉圖片
             }
         }
     }

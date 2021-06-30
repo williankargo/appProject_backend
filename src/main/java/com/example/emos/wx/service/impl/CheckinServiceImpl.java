@@ -157,10 +157,10 @@ public class CheckinServiceImpl implements CheckinService {
                 /**
                  * 查詢疫情風險等級
                  * */
-                int risk = 1;
+                int risk = 1; // 默認低風險
                 String city = (String) param.get("city");
                 String district = (String) param.get("district");
-                String country = (String) param.get("country"); // todo: 看到底會不會拿nation(會寫成country要改成nation)
+                String country = (String) param.get("country");
                 String province = (String) param.get("province");
                 String address = (String) param.get("address");
 
@@ -169,12 +169,12 @@ public class CheckinServiceImpl implements CheckinService {
                         // 台灣的方法
                         if ("台湾省".equals(province)) {
                             // 全部縣市
-                            String url2 = "https://covid-19.nchc.org.tw/city_confirmed.php?mycity=全部縣市";
-                            Document document2 = Jsoup.connect(url2).get();
+                            String url2 = "https://covid-19.nchc.org.tw/city_confirmed.php?mycity=" + "全部縣市";
+                            Document document2 = Jsoup.connect(url2).get(); // https需要去找憑證插進去
                             Elements elements2 = document2.getElementsByClass("country_deaths mb-1 text-dark display-4");
 
                             Element element2 = elements2.get(0);
-                            String result2 = element2.select("h1").text(); //todo: +有影響嗎?
+                            String result2 = element2.select("h1").text(); //+沒有影響嗎
                             int sum = Integer.parseInt(result2);
 
                             // 單一縣市
@@ -184,10 +184,11 @@ public class CheckinServiceImpl implements CheckinService {
                             Elements elements = document.getElementsByClass("country_deaths mb-1 text-dark display-4");
 
                             Element element = elements.get(0);
-                            String result = element.select("h1").text(); //todo: +有影響嗎?
+                            String result = element.select("h1").text();
                             int num = Integer.parseInt(result);
 
-                            if (num / sum > 1 / 3) { // 高風險
+                            double judge = (double)num / sum;
+                            if (judge > 1 / 3.0) { // 高風險
                                 risk = 3;
                                 // 發送警告郵件
                                 HashMap<String, String> map = userDao.searchNameAndDept(userId);
@@ -202,11 +203,11 @@ public class CheckinServiceImpl implements CheckinService {
                                         "請即時與該員工聯繫，確認身體狀況！");
                                 emailTask.sendAsync(message);
 
-                            } else if (num / sum < 1 / 3) { // 低風險
+                            } else if(judge < 1 / 3.0 && judge > 1 / 4.0) { // 中風險
                                 risk = 2;
                             }
-                            // 中國的方法
-                        } else {
+
+                        } else {  // 中國的方法
 
                             String code = cityDao.searchCode(city);
 
