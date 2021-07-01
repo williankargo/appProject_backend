@@ -56,7 +56,7 @@ public class CheckinController {
 
         int userId = jwtUtil.getUserId(token);
         String fileName = file.getOriginalFilename().toLowerCase();
-        if (!fileName.endsWith(".jpg")) { // todo: iphone可能不是jpg
+        if (!fileName.endsWith(".jpg")) {
             return R.error("必須提交JPG格式的圖片");
         } else {
             String path = imageFolder + "/" + fileName;
@@ -92,7 +92,7 @@ public class CheckinController {
 
         int userId = jwtUtil.getUserId(token);
         String fileName = file.getOriginalFilename().toLowerCase();
-        if (!fileName.endsWith(".jpg")) { // todo: iphone可能不是jpg
+        if (!fileName.endsWith(".jpg")) {
             return R.error("必須提交JPG格式的圖片");
         } else {
             String path = imageFolder + "/" + fileName;

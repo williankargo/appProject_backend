@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.emos.wx.db.dao.TbHolidaysDao">
+
+    <!-- limit: 只取一筆資料-->
     <select id="searchTodayIsHolidays" resultType="Integer">
         SELECT id
         FROM tb_holidays
         WHERE date = CURRENT_DATE LIMIT 1;
     </select>
-    <!-- limit: 只取一筆資料-->
+
+    <!--可能會返回一串date，所以DAO要用arraylist接住-->
+    <select id="searchHolidaysInRange" parameterType="HashMap" resultType="String">
+        SELECT date
+        FROM tb_holidays
+        WHERE date BETWEEN #{startDate} AND #{endDate}
+    </select>
+
 </mapper>

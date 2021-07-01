@@ -1,5 +1,7 @@
 package com.example.emos.wx.service.impl;
 
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateRange;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
@@ -26,6 +28,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -91,7 +95,7 @@ public class CheckinServiceImpl implements CheckinService {
         }
 
         if (type.equals("節假日")) {
-            return "節假日不需要打卡";
+            return "節假日不需要考勤";
         } else {
             DateTime now = DateUtil.date();
             String start = DateUtil.today() + " " + constants.attendanceStartTime;
@@ -99,9 +103,9 @@ public class CheckinServiceImpl implements CheckinService {
             DateTime attendanceStart = DateUtil.parse(start);
             DateTime attendanceEnd = DateUtil.parse(end);
             if (now.isBefore(attendanceStart)) {
-                return "沒到上班打卡開始時間";
+                return "沒到上班考勤開始時間";
             } else if (now.isAfter(attendanceEnd)) {
-                return "超過了上班打卡結束時間";
+                return "超過了上班考勤結束時間";
             } else {
                 HashMap map = new HashMap();
                 map.put("userId", userId);
@@ -109,7 +113,7 @@ public class CheckinServiceImpl implements CheckinService {
                 map.put("start", start);
                 map.put("end", end);
                 boolean bool = checkinDao.haveCheckin(map) != null ? true : false;
-                return bool ? "今日已經打卡，不用重複打卡" : "可以打卡";
+                return bool ? "今日已經考勤，不用重複考勤" : "可以考勤";
             }
         }
     }
@@ -187,7 +191,7 @@ public class CheckinServiceImpl implements CheckinService {
                             String result = element.select("h1").text();
                             int num = Integer.parseInt(result);
 
-                            double judge = (double)num / sum;
+                            double judge = (double) num / sum;
                             if (judge > 1 / 3.0) { // 高風險
                                 risk = 3;
                                 // 發送警告郵件
@@ -203,7 +207,7 @@ public class CheckinServiceImpl implements CheckinService {
                                         "請即時與該員工聯繫，確認身體狀況！");
                                 emailTask.sendAsync(message);
 
-                            } else if(judge < 1 / 3.0 && judge > 1 / 4.0) { // 中風險
+                            } else if (judge < 1 / 3.0 && judge > 1 / 4.0) { // 中風險
                                 risk = 2;
                             }
 
@@ -257,6 +261,7 @@ public class CheckinServiceImpl implements CheckinService {
                 entity.setStatus((byte) status);
                 entity.setDate(DateUtil.today()); // DateUtil.today()返回String日期
                 entity.setCreateTime(d1);
+                entity.setRisk(risk);
                 checkinDao.insert(entity);
 
             }
@@ -279,6 +284,74 @@ public class CheckinServiceImpl implements CheckinService {
             entity.setFaceModel(body);
             faceModelDao.insert(entity);
         }
+    }
+
+    @Override
+    public HashMap searchTodayCheckin(int userId) {
+        HashMap map = checkinDao.searchTodayCheckin(userId);
+        return map;
+    }
+
+    @Override
+    public long searchCheckinDays(int userId) {
+        long days = checkinDao.searchCheckinDays(userId);
+        return days;
+    }
+
+    @Override
+    public ArrayList<HashMap> searchWeekCheckin(HashMap param) {
+
+        ArrayList<HashMap> checkinList = checkinDao.searchWeekCheckin(param); // todo: {[date:"2023-2-20"] , [status:"正常"]}
+        ArrayList holidaysList = holidaysDao.searchHolidaysInRange(param);
+        ArrayList workdayList = workdayDao.searchWorkdayInRange(param);
+
+        DateTime startDate = DateUtil.parseDate(param.get("startDate").toString());
+        DateTime endDate = DateUtil.parseDate(param.get("endDate").toString());
+        DateRange range = DateUtil.range(startDate, endDate, DateField.DAY_OF_WEEK); // 會返回一週的紀錄 2021-06-18 21:39:21...
+        ArrayList<HashMap> list = new ArrayList<>();
+
+        range.forEach(one -> {
+            String date = one.toString("yyyy-MM-dd");
+            String type = "工作日";
+            if (one.isWeekend()) {
+                type = "節假日";
+            }
+            if (holidaysList != null && holidaysList.contains(date)) {
+                type = "節假日";
+            } else if (workdayList != null && workdayList.contains(date)) {
+                type = "工作日";
+            }
+            String status = ""; // 比如現在禮拜三，但你要查禮拜五，查不到東西status為空
+            if (type.equals("工作日") && DateUtil.compare(one, DateUtil.date()) <= 0) { // one 和 DateUtil.date()今天 比大小，小等於0就是在今天之前
+                status = "缺勤"; // 先設定默認值，如果下面找不到就是缺勤
+                boolean flag = false; // 還沒考勤
+                for (HashMap<String, String> map : checkinList) { // 找現在的時間，找到就可以break了
+                    if (map.containsValue(date)) {
+                        status = map.get("status"); // todo: map -> {[date:"2023-2-20"] , [status:"正常"]}
+                        flag = true; // 代表今天已經考勤過了，已經有拿到status了，那下面的特殊情況就不會存在
+                        break; // 但外面forEach()不會跟著結束
+                    }
+                }
+
+                // DateTime -> DateUtil.date() like 2021-07-01 21:32:47 代表現在
+                // String -> DateUtil.today() like 2021-07-01 代表現在
+                DateTime endTime = DateUtil.parse(DateUtil.today() + " " + constants.attendanceEndTime); // 考勤結束的時間
+                String today = DateUtil.today(); // ex: 2023-2-20
+                // 特殊狀況：如果查到的是今天，但今天還沒考勤，且今天還沒過考勤時間
+                if (date.equals(today) && DateUtil.date().isBefore(endTime) && flag == false) {
+                    status = ""; // 如果現在還沒到考勤結束時間，且今天還沒考勤，查了status會是空
+                }
+
+            }
+            HashMap map = new HashMap();
+            map.put("date", date);
+            map.put("status", status);
+            map.put("type", type);
+            map.put("day", one.dayOfWeekEnum().toChinese("週")); // 星期一 => 週一
+            list.add(map);
+
+        });
+        return list;
     }
 }
 
