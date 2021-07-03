@@ -31,6 +31,11 @@
     WHERE u.id = #{userId} AND u.status = 1
   </select>
 
+  <!-- 這裡返回值不是hashmap，不用在sql裡面就轉好類，在外面resultType轉就好-->
+  <select id="searchUserHiredate" parameterType="int" resultType="String">
+    SELECT hiredate FROM tb_user
+    WHERE id=#{userId} AND status=1
+  </select>
 
 
   <!--  比如說一個管理者創建一個普通員工的紀錄，這名普通員工是可以拿激活碼到emos上面，把自己的微信帳戶和員工紀錄進行綁定，-->

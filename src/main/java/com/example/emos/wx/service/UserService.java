@@ -15,4 +15,6 @@ public interface UserService {
     public Integer login(String code);
 
     public TbUser searchById(int userId);
+
+    public String searchUserHiredate(int userId);
 }

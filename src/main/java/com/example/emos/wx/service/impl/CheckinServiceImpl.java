@@ -299,9 +299,9 @@ public class CheckinServiceImpl implements CheckinService {
     }
 
     @Override
-    public ArrayList<HashMap> searchWeekCheckin(HashMap param) {
+    public ArrayList<HashMap> searchWeekCheckin(HashMap param) { // {startDate:"" ,endDate:"" ,userId:""}
 
-        ArrayList<HashMap> checkinList = checkinDao.searchWeekCheckin(param); // todo: {[date:"2023-2-20"] , [status:"正常"]}
+        ArrayList<HashMap> checkinList = checkinDao.searchWeekCheckin(param); // {[date:"2023-2-20",status:"正常"],[date:"2023-2-21",status:"正常"],...}
         ArrayList holidaysList = holidaysDao.searchHolidaysInRange(param);
         ArrayList workdayList = workdayDao.searchWorkdayInRange(param);
 
@@ -327,7 +327,7 @@ public class CheckinServiceImpl implements CheckinService {
                 boolean flag = false; // 還沒考勤
                 for (HashMap<String, String> map : checkinList) { // 找現在的時間，找到就可以break了
                     if (map.containsValue(date)) {
-                        status = map.get("status"); // todo: map -> {[date:"2023-2-20"] , [status:"正常"]}
+                        status = map.get("status"); // map -> {[date:"2023-2-20",status:"正常"]}
                         flag = true; // 代表今天已經考勤過了，已經有拿到status了，那下面的特殊情況就不會存在
                         break; // 但外面forEach()不會跟著結束
                     }

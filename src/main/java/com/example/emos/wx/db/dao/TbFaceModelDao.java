@@ -9,7 +9,7 @@ public interface TbFaceModelDao {
 
     public String searchFaceModel(int userId);
 
-    public void insert(TbFaceModel faceModel); //todo: userId到底怎麼進去的？又沒有指定
+    public void insert(TbFaceModel faceModel); //userId已經包含在faceModel裡了，到xml會被提出來
 
     public int deleteFaceModel(int userId);
 }
