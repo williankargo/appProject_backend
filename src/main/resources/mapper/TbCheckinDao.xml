@@ -22,11 +22,11 @@
                    WHEN ck.status = 2 THEN '遲到'
                    END                              AS status,
                CASE
-                   WHEN ck.risk = 1 THEN '低風險',
-                   WHEN ck.risk = 2 THEN '中風險',
+                   WHEN ck.risk = 1 THEN '低風險'
+                   WHEN ck.risk = 2 THEN '中風險'
                    WHEN ck.status = 3 THEN '高風險'
                    END                              AS risk,
-               DATE_FORMAT(ck.create_time, '%H:%i') AS checkTime,
+               DATE_FORMAT(ck.create_time, '%H:%i') AS checkinTime,
                ck.date
 
         FROM tb_user AS u

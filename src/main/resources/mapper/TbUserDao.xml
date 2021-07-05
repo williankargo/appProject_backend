@@ -37,6 +37,12 @@
     WHERE id=#{userId} AND status=1
   </select>
 
+  <select id="searchUserSummary" parameterType="int" resultType="HashMap">
+    SELECT u.name, u.photo, d.dept_name AS deptName
+    FROM tb_user u LEFT JOIN tb_dept d ON u.dept_id=d.id
+    WHERE u.id=#{userId} AND u.status=1
+  </select>
+
 
   <!--  比如說一個管理者創建一個普通員工的紀錄，這名普通員工是可以拿激活碼到emos上面，把自己的微信帳戶和員工紀錄進行綁定，-->
 <!--  那麼現有emos裡面他的openId就是空的-->

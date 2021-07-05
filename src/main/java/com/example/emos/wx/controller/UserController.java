@@ -10,12 +10,10 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -38,7 +36,7 @@ public class UserController {
 
     @PostMapping("/register")
     @ApiOperation("註冊用戶")
-    public R register(@Valid @RequestBody RegisterForm form){
+    public R register(@Valid @RequestBody RegisterForm form) {
         int id = userService.registerUser(form.getRegisterCode(), form.getCode(), form.getNickname(), form.getPhoto());
         String token = jwtUtil.createToken(id);
         Set<String> paramSet = userService.searchUserPermissions(id);
@@ -48,7 +46,7 @@ public class UserController {
 
     @PostMapping("/login")
     @ApiOperation("登入系統")
-    public R login(@Valid @RequestBody LoginForm form){
+    public R login(@Valid @RequestBody LoginForm form) {
         int id = userService.login(form.getCode());
         String token = jwtUtil.createToken(id);
         saveCacheToken(token, id);
@@ -56,8 +54,16 @@ public class UserController {
         return R.ok("登入成功").put("token", token).put("permission", permsSet);
     }
 
+    @GetMapping("/searchUserSummary")
+    @ApiOperation("查詢用戶摘要訊息")
+    public R searchUserSummary(@RequestHeader("token") String token) {
+        int userId = jwtUtil.getUserId(token);
+        HashMap map = userService.searchUserSummary(userId);
+        return R.ok().put("result", map);
+    }
 
-    private void saveCacheToken(String token, int userId){
-        redisTemplate.opsForValue().set(token, userId+"", cacheExpire, TimeUnit.DAYS);
+
+    private void saveCacheToken(String token, int userId) {
+        redisTemplate.opsForValue().set(token, userId + "", cacheExpire, TimeUnit.DAYS);
     }
 }
