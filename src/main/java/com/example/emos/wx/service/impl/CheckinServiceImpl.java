@@ -358,5 +358,10 @@ public class CheckinServiceImpl implements CheckinService {
     public ArrayList<HashMap> searchMonthCheckin(HashMap param) {
         return this.searchWeekCheckin(param);
     }
+
+    @Override
+    public ArrayList<HashMap> searchMonthCheckin(HashMap param) {
+        return this.searchWeekCheckin(param);
+    }
 }
 
