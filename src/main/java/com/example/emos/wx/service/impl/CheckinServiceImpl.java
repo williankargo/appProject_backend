@@ -307,7 +307,7 @@ public class CheckinServiceImpl implements CheckinService {
 
         DateTime startDate = DateUtil.parseDate(param.get("startDate").toString());
         DateTime endDate = DateUtil.parseDate(param.get("endDate").toString());
-        DateRange range = DateUtil.range(startDate, endDate, DateField.DAY_OF_WEEK); // 會返回一週的紀錄 2021-06-18 21:39:21...
+        DateRange range = DateUtil.range(startDate, endDate, DateField.DAY_OF_MONTH); // 會返回一個月的紀錄 2021-06-18 21:39:21...，但這裡end剛好是一週後所以返回七天
         ArrayList<HashMap> list = new ArrayList<>();
 
         range.forEach(one -> {
@@ -352,6 +352,11 @@ public class CheckinServiceImpl implements CheckinService {
 
         });
         return list;
+    }
+
+    @Override
+    public ArrayList<HashMap> searchMonthCheckin(HashMap param) {
+        return this.searchWeekCheckin(param);
     }
 }
 

@@ -53,6 +53,9 @@ public class UserController {
         Set<String> permsSet = userService.searchUserPermissions(id);
         return R.ok("登入成功").put("token", token).put("permission", permsSet);
     }
+    // 微信login流程：用戶A以前端去微信拿臨時授權字符串(code有時效性) -> code傳到後端，後端再去微信拿openId(每人唯一)
+    // -> 用openID找資料庫裡的員工
+
 
     @GetMapping("/searchUserSummary")
     @ApiOperation("查詢用戶摘要訊息")

@@ -8,6 +8,7 @@ import com.example.emos.wx.common.util.R;
 import com.example.emos.wx.config.SystemConstants;
 import com.example.emos.wx.config.shiro.JwtUtil;
 import com.example.emos.wx.controller.form.CheckinForm;
+import com.example.emos.wx.controller.form.SearchMonthCheckinForm;
 import com.example.emos.wx.exception.EmosException;
 import com.example.emos.wx.service.CheckinService;
 import com.example.emos.wx.service.UserService;
@@ -27,7 +28,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 @RequestMapping("/checkin")
-@RestController
+@RestController // 可返回JSON格式
 @Api(tags = "簽到模塊Web接口")
 @Slf4j
 public class CheckinController {
@@ -56,6 +57,10 @@ public class CheckinController {
     }
 
 
+    // @RequestParam(接收來自於url或body，處理Content-Type: application/x-www-form-urlencoded)
+    // @RequestBody(接收來自於body，處理 Content-Type: application/json)
+    // todo: @沒有使用? 為什麼不用加上@RequestPart? 儘管前端傳來 Content-Type: application/form-data，
+    // todo: photo出現在html的哪裏?
     @PostMapping("/checkin")
     @ApiOperation("簽到")//--------------------接收前端命名為photo的檔案
     public R checkin(@Valid CheckinForm form, @RequestParam("photo") MultipartFile file, @RequestHeader("token") String token) {
@@ -123,7 +128,7 @@ public class CheckinController {
 
     @GetMapping("/searchTodayCheckin")
     @ApiOperation("查詢用戶當日簽到數據")
-    public R searchTodayCheckin(@RequestHeader("token") String token){
+    public R searchTodayCheckin(@RequestHeader("token") String token) {
 
         int userId = jwtUtil.getUserId(token);
         HashMap map = checkinService.searchTodayCheckin(userId); // 到R對象的
@@ -134,10 +139,10 @@ public class CheckinController {
 
         DateTime hiredate = DateUtil.parse(userService.searchUserHiredate(userId));
         DateTime startDate = DateUtil.beginOfWeek(DateUtil.date());
-        if(startDate.isBefore(hiredate)){ // 防止把未到職的天數也算缺勤
+        if (startDate.isBefore(hiredate)) { // 防止把未到職的天數也算缺勤
             startDate = hiredate;
         }
-        DateTime endDate = DateUtil.endOfWeek(DateUtil.date());
+        DateTime endDate = DateUtil.endOfWeek(DateUtil.date()); // 這裡已經設定endDate為一週後
         HashMap param = new HashMap(); // 到數據庫的
         param.put("startDate", startDate.toString());
         param.put("endDate", endDate.toString());
@@ -147,4 +152,49 @@ public class CheckinController {
         map.put("weekCheckin", list);
         return R.ok().put("result", map);
     }
+
+    @PostMapping("/searchMonthCheckin")
+    @ApiOperation("查詢用戶某月簽到數據")
+    public R searchMonthCheckin(@Valid @RequestBody SearchMonthCheckinForm form, @RequestHeader("token") String token) {
+
+        int userId = jwtUtil.getUserId(token);
+        DateTime hiredate = DateUtil.parse(userService.searchUserHiredate(userId));
+        String month = form.getMonth() < 10 ? "0" + form.getMonth() : form.getMonth().toString(); // 小於10代表只有一位，要加個0變成兩位數
+        DateTime startDate = DateUtil.parse(form.getYear() + "-" + month + "-01");
+
+        // 要查詢的起始日期 比 入職日該月第一天的日期 還要早 (如果這個條件都過不了，那完全沒有查的機會)
+        if (startDate.isBefore(DateUtil.beginOfMonth(hiredate))) {
+            throw new EmosException("只能查詢考勤之後日期的數據");
+        }
+        // 要查詢的起始日期 比 入職日還早，把要查詢的起始日期放在入職日
+        if (startDate.isBefore(hiredate)) {
+            startDate = hiredate;
+        }
+
+        DateTime endDate = DateUtil.endOfMonth(startDate);
+        HashMap param = new HashMap();
+        param.put("userId", userId);
+        param.put("startDate", startDate.toString());
+        param.put("endDate", endDate.toString());
+        ArrayList<HashMap> list = checkinService.searchMonthCheckin(param);
+
+        int sum_1 = 0, sum_2 = 0, sum_3 = 0;
+        for (HashMap<String, String> one : list) {
+            String type = one.get("type");
+            String status = one.get("status");
+            if ("工作日".equals(type)) {
+                if ("正常".equals(status)) {
+                    sum_1++;
+                } else if ("遲到".equals(status)) {
+                    sum_2++;
+                } else if ("缺勤".equals(status)) {
+                    sum_3++;
+                }
+            }
+        }
+
+        return R.ok().put("list", list).put("sum_1", sum_1).put("sum_2", sum_2).put("sum_3", sum_3);
+    }
+
+
 }
