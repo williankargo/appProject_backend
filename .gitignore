@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+#My configuration:
+application.yml
