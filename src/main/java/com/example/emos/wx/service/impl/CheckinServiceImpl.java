@@ -27,8 +27,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -352,11 +350,6 @@ public class CheckinServiceImpl implements CheckinService {
 
         });
         return list;
-    }
-
-    @Override
-    public ArrayList<HashMap> searchMonthCheckin(HashMap param) {
-        return this.searchWeekCheckin(param);
     }
 
     @Override

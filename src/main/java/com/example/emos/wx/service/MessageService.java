@@ -9,12 +9,12 @@ import java.util.List;
 public interface MessageService {
 
     // from MessageDao
-    public String insert(MessageEntity entity);
+    public String insertMessage(MessageEntity entity); // shift + rename可以快速改名
     public List<HashMap> searchMessageByPage(int userId, long start, int length);
     public HashMap searchMessageById(String id);
 
     // from MessageRefDao
-    public String insert(MessageRefEntity entity);
+    public String insertRef(MessageRefEntity entity);
     public long searchUnreadCount(int userId);
     public long searchLastCount(int userId);
     public long updateUnreadMessage(String id);

@@ -21,7 +21,7 @@ public class MessageServiceImpl implements MessageService {
     private MessageRefDao messageRefDao;
 
     @Override
-    public String insert(MessageEntity entity) {
+    public String insertMessage(MessageEntity entity) {
         String id = messageDao.insert(entity);
         return id;
     }
@@ -39,7 +39,7 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public String insert(MessageRefEntity entity) {
+    public String insertRef(MessageRefEntity entity) {
         String id = messageRefDao.insert(entity);
         return id;
     }
