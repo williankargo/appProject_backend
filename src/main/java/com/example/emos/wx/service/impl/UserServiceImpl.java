@@ -1,13 +1,16 @@
 package com.example.emos.wx.service.impl;
 
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.example.emos.wx.db.dao.TbUserDao;
+import com.example.emos.wx.db.pojo.MessageEntity;
 import com.example.emos.wx.db.pojo.TbUser;
 import com.example.emos.wx.exception.EmosException;
 import com.example.emos.wx.service.UserService;
 
+import com.example.emos.wx.task.MessageTask;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +36,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private TbUserDao userDao;
+
+    @Autowired
+    private MessageTask messageTask;
 
     // 去微信取得openId(用戶唯一標示)
     private String getOpenId(String code) { // code: 臨時授權字符串
@@ -75,6 +81,15 @@ public class UserServiceImpl implements UserService {
 
                 userDao.insert(param);
                 int id = userDao.searchIdByOpenId(openId);
+
+                MessageEntity entity = new MessageEntity();
+                entity.setSenderId(0);
+                entity.setSenderName("系統消息");
+                entity.setUuid(IdUtil.simpleUUID());
+                entity.setMsg("歡迎您註冊成為超級管理員，請即時更新您的個人員工信息");
+                entity.setSendTime(new Date());
+                messageTask.sendAsync(id + "", entity);
+
                 return id;
             } else {
                 // 如果root已經綁定了，就拋出異常
@@ -100,7 +115,8 @@ public class UserServiceImpl implements UserService {
         if (id == null) {
             throw new EmosException("帳戶不存在");
         }
-        // todo: 從消息隊列中接收消息，轉移到消息表
+        // 從消息隊列中接收消息，轉移到消息表
+        messageTask.receiveAsync(id + "");
         return id;
     }
 
