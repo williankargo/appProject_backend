@@ -10,7 +10,7 @@
     SELECT id FROM tb_user WHERE open_id=#{openId} AND status = 1
   </select>
 
-  <!--前面的有沒有包含後面的(必須用char比較)-->
+  <!--JSON_CONTAINS(): [前面的]有沒有包含[後面的(必須用char比較)]-->
   <select id="searchUserPermissions" parameterType="int" resultType="String">
     SELECT p.permission_name
     FROM tb_user u

@@ -54,6 +54,7 @@ public class MessageController {
     @PostMapping("/updateUnreadMessage")
     @ApiOperation("未讀消息更新成已讀消息")
     public R updateUnreadMessage(@Valid @RequestBody UpdateUnreadMessageForm form) {
+        System.out.println("update!!!");
         long rows = messageService.updateUnreadMessage(form.getId());
         return R.ok().put("result", rows > 1 ? true : false);
     }

@@ -85,7 +85,7 @@ public class UserServiceImpl implements UserService {
                 MessageEntity entity = new MessageEntity();
                 entity.setSenderId(0);
                 entity.setSenderName("系統消息");
-                entity.setUuid(IdUtil.simpleUUID());
+                entity.setUuid(IdUtil.simpleUUID()); // 把uuid的'-'去掉
                 entity.setMsg("歡迎您註冊成為超級管理員，請即時更新您的個人員工信息");
                 entity.setSendTime(new Date());
                 messageTask.sendAsync(id + "", entity);
@@ -116,7 +116,7 @@ public class UserServiceImpl implements UserService {
             throw new EmosException("帳戶不存在");
         }
         // 從消息隊列中接收消息，轉移到消息表
-        messageTask.receiveAsync(id + "");
+//        messageTask.receiveAsync(id + ""); 設定前端一進入頁面就會發出輪詢請求，所以這行不需要了
         return id;
     }
 

@@ -1,15 +1,12 @@
-package com.example.emos.wx.db.dao;
+package com.example.emos.wx.service;
 
 import com.example.emos.wx.db.pojo.TbMeeting;
-import org.apache.ibatis.annotations.Mapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-@Mapper
-public interface TbMeetingDao {
-
-    public int insertMeeting(TbMeeting entity);
+public interface MeetingService {
+    public void insertMeeting(TbMeeting entity);
 
     public ArrayList<HashMap> searchMyMeetingListByPage(HashMap param);
 }
