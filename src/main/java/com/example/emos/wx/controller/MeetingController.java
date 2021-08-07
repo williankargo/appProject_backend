@@ -5,6 +5,7 @@ import com.example.emos.wx.common.util.R;
 import com.example.emos.wx.config.shiro.JwtUtil;
 import com.example.emos.wx.controller.form.SearchMyMeetingListByPageForm;
 import com.example.emos.wx.service.MeetingService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/meeting")
+@Api(tags = "會議接口")
 public class MeetingController {
 
     @Autowired
