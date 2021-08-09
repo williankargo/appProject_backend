@@ -81,6 +81,15 @@
         ORDER BY d.id, u.id
     </select>
 
+    <select id="searchMembers" parameterType="list" resultType="HashMap">
+        SELECT id, name, photo
+        FROM tb_user
+        WHERE status = 1
+        AND id IN
+        <foreach collection="list" item="one" separator="," open="(" close=")">
+            #{one}
+        </foreach>
+    </select>
 
     <!--  比如說一個管理者創建一個普通員工的紀錄，這名普通員工是可以拿激活碼到emos上面，把自己的微信帳戶和員工紀錄進行綁定，-->
     <!--  那麼現有emos裡面他的openId就是空的-->
