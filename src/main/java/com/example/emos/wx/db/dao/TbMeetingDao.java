@@ -12,4 +12,8 @@ public interface TbMeetingDao {
     public int insertMeeting(TbMeeting entity);
 
     public ArrayList<HashMap> searchMyMeetingListByPage(HashMap param);
+
+    public boolean searchMeetingMembersInSameDept(String uuid);
+
+    public int updateMeetingInstanceId( HashMap param);
 }

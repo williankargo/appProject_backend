@@ -29,4 +29,10 @@ public interface TbUserDao {
     public ArrayList<HashMap> searchUserGroupByDept(String keyword);
 
     public ArrayList<HashMap> searchMembers(List param);
+
+    public HashMap searchUserInfo(int userId);
+
+    public int searchDeptManagerId(int id);
+
+    public int searchGmId();
 }

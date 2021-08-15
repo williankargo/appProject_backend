@@ -11,7 +11,7 @@ public class RabbitMQConfig {
     @Bean
     public ConnectionFactory getFactory(){
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("192.168.50.193"); // linux地址
+        factory.setHost("35.236.188.33"); // linux地址
         factory.setPort(5672);  // rabbitMQ端口號
         return factory;
     }
